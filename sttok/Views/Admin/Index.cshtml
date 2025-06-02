@@ -1,0 +1,88 @@
+@{
+    ViewData["Title"] = "Admin Paneli";
+}
+
+<div class="container mt-4">
+    <h2 class="mb-4 text-white">Admin Paneli</h2>
+    
+    <div class="row">
+        <!-- Kullanıcı Yönetimi -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-users me-2"></i>Kullanıcı Yönetimi
+                    </h5>
+                    <p class="card-text">Kullanıcıları görüntüle, düzenle ve yönet.</p>
+                    <a href="/Admin/Users" class="btn btn-primary">
+                        <i class="fas fa-arrow-right me-1"></i>Kullanıcıları Yönet
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stok Yönetimi -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-boxes me-2"></i>Stok Yönetimi
+                    </h5>
+                    <p class="card-text">Stok hareketlerini ve ürünleri yönet.</p>
+                    <a href="/DepoStok" class="btn btn-primary">
+                        <i class="fas fa-arrow-right me-1"></i>Stok Yönetimine Git
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Raporlar -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-chart-bar me-2"></i>Raporlar
+                    </h5>
+                    <p class="card-text">Stok hareketleri ve kullanıcı işlemleri raporları.</p>
+                    <a href="/Admin/Reports" class="btn btn-primary">
+                        <i class="fas fa-arrow-right me-1"></i>Raporları Görüntüle
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border: none;
+        border-radius: 10px;
+        transition: transform 0.3s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+    }
+
+    .card-title {
+        color: #fff;
+        font-weight: 600;
+    }
+
+    .card-text {
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    .btn-primary {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: translateX(5px);
+    }
+</style> 

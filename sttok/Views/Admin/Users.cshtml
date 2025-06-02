@@ -1,0 +1,129 @@
+@model IEnumerable<Microsoft.AspNetCore.Identity.IdentityUser>
+
+@{
+    ViewData["Title"] = "Kullanıcı Yönetimi";
+}
+
+<div class="container mt-4">
+    <h2 class="mb-4 text-white">Kullanıcı Yönetimi</h2>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Kullanıcı Adı</th>
+                            <th>E-posta</th>
+                            <th>E-posta Onayı</th>
+                            <th>İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var user in Model)
+                        {
+                            <tr>
+                                <td>@user.UserName</td>
+                                <td>@user.Email</td>
+                                <td>
+                                    @if (user.EmailConfirmed)
+                                    {
+                                        <span class="badge bg-success">Onaylı</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning">Onaysız</span>
+                                    }
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-info toggle-admin" data-id="@user.Id">
+                                        <i class="fas fa-user-shield me-1"></i>Admin Yap
+                                    </button>
+                                    <button class="btn btn-sm btn-danger delete-user" data-id="@user.Id">
+                                        <i class="fas fa-trash me-1"></i>Sil
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Admin rolü değiştirme
+            $('.toggle-admin').click(function() {
+                const userId = $(this).data('id');
+                const button = $(this);
+                
+                $.post('/Admin/ToggleAdminRole', { id: userId }, function(response) {
+                    if (response.success) {
+                        if (button.find('i').hasClass('fa-user-shield')) {
+                            button.find('i').removeClass('fa-user-shield').addClass('fa-user');
+                            button.html('<i class="fas fa-user me-1"></i>Admin Yetkisini Al');
+                        } else {
+                            button.find('i').removeClass('fa-user').addClass('fa-user-shield');
+                            button.html('<i class="fas fa-user-shield me-1"></i>Admin Yap');
+                        }
+                    }
+                });
+            });
+
+            // Kullanıcı silme
+            $('.delete-user').click(function() {
+                const userId = $(this).data('id');
+                const row = $(this).closest('tr');
+                
+                if (confirm('Bu kullanıcıyı silmek istediğinizden emin misiniz?')) {
+                    $.post('/Admin/DeleteUser', { id: userId }, function(response) {
+                        if (response.success) {
+                            row.fadeOut();
+                        } else {
+                            alert('Kullanıcı silinemedi: ' + response.message);
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+}
+
+<style>
+    .card {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border: none;
+        border-radius: 10px;
+    }
+
+    .table {
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    .table thead th {
+        border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        color: #fff;
+        font-weight: 600;
+    }
+
+    .table tbody tr {
+        transition: all 0.3s ease;
+    }
+
+    .table tbody tr:hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .btn {
+        margin: 0 2px;
+    }
+
+    .badge {
+        padding: 5px 10px;
+        font-weight: 500;
+    }
+</style> 

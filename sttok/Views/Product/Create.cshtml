@@ -1,0 +1,66 @@
+@model sttok.Models.Product
+
+@{
+    ViewData["Title"] = "Yeni Ürün Ekle";
+}
+
+<h1>Yeni Ürün Ekle</h1>
+
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Create">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            
+            <div class="form-group">
+                <label asp-for="UrunBarkod" class="control-label">Ürün Barkod</label>
+                <input asp-for="UrunBarkod" class="form-control" />
+                <span asp-validation-for="UrunBarkod" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="UrunAd" class="control-label">Ürün Adı</label>
+                <input asp-for="UrunAd" class="form-control" />
+                <span asp-validation-for="UrunAd" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="UrunCesit" class="control-label">Ürün Çeşidi</label>
+                <input asp-for="UrunCesit" class="form-control" />
+                <span asp-validation-for="UrunCesit" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="UrunEn" class="control-label">Ürün En</label>
+                <input asp-for="UrunEn" class="form-control" />
+                <span asp-validation-for="UrunEn" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="UrunBoy" class="control-label">Ürün Boy</label>
+                <input asp-for="UrunBoy" class="form-control" />
+                <span asp-validation-for="UrunBoy" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="UrunDesenKod" class="control-label">Desen Kodu</label>
+                <input asp-for="UrunDesenKod" class="form-control" />
+                <span asp-validation-for="UrunDesenKod" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="UrunRenk" class="control-label">Ürün Renk</label>
+                <input asp-for="UrunRenk" class="form-control" />
+                <span asp-validation-for="UrunRenk" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mt-3">
+                <input type="submit" value="Ekle" class="btn btn-primary" />
+                <a asp-action="Index" class="btn btn-secondary">Listeye Dön</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+} 

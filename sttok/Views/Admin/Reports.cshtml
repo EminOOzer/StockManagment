@@ -1,0 +1,80 @@
+@model IEnumerable<sttok.Models.StokHareket>
+
+@{
+    ViewData["Title"] = "Stok Hareketleri Raporu";
+}
+
+<div class="container mt-4">
+    <h2 class="mb-4 text-white">Stok Hareketleri Raporu</h2>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Tarih</th>
+                            <th>Ürün</th>
+                            <th>Barkod</th>
+                            <th>Hareket Tipi</th>
+                            <th>Miktar</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var hareket in Model)
+                        {
+                            <tr>
+                                <td>@hareket.IslemTarihi.ToString("dd.MM.yyyy HH:mm")</td>
+                                <td>@hareket.Product?.UrunAd</td>
+                                <td>@hareket.Product?.UrunBarkod</td>
+                                <td>
+                                    @if (hareket.HareketTipi == "Giriş")
+                                    {
+                                        <span class="badge bg-success">@hareket.HareketTipi</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">@hareket.HareketTipi</span>
+                                    }
+                                </td>
+                                <td>@hareket.Miktar</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border: none;
+        border-radius: 10px;
+    }
+
+    .table {
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    .table thead th {
+        border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        color: #fff;
+        font-weight: 600;
+    }
+
+    .table tbody tr {
+        transition: all 0.3s ease;
+    }
+
+    .table tbody tr:hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .badge {
+        padding: 5px 10px;
+        font-weight: 500;
+    }
+</style> 

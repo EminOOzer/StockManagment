@@ -1,0 +1,1225 @@
+@model IEnumerable<sttok.Models.DepoStok>
+
+@{
+    ViewData["Title"] = "Depo Stok Durumu";
+}
+
+<div class="container-fluid p-4">
+    <!-- Üst Butonlar ve Arama -->
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+        <h2 class="text-white mb-0">Depo Stok</h2>
+        <div class="d-flex gap-2">
+            <a href="/DepoStok/GunlukIslemler" class="btn custom-btn">
+                <i class="fas fa-calendar-day me-2"></i>Günlük İşlemler
+            </a>
+            <button type="button" class="btn custom-btn" data-bs-toggle="modal" data-bs-target="#addStokModal">
+                <i class="fas fa-plus-circle me-2"></i>Yeni Stok Girişi
+            </button>
+            <button type="button" class="btn custom-btn" data-bs-toggle="modal" data-bs-target="#stokDusModal">
+                <i class="fas fa-minus-circle me-2"></i>Stok Çıkışı
+            </button>
+            <button type="button" class="btn custom-btn" id="raporAlBtn">
+                <i class="fas fa-print me-2"></i>Rapor Al
+            </button>
+        </div>
+    </div>
+
+    <!-- Arama Kutusu -->
+    <div class="search-container mb-4">
+        <input type="text" id="searchInput" class="search-input" 
+               placeholder="Ürün adı, barkod veya desen kodu ile arama yapın...">
+        <i class="fas fa-search search-icon"></i>
+    </div>
+
+    <!-- Filtreleme kartlarını güncelleyelim -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="info-card">
+                <div class="info-card-content">
+                    <i class="fas fa-boxes info-card-icon"></i>
+                    <div>
+                        <h6>Toplam Stok Adedi</h6>
+                        <h3 id="toplamStok">@Model.Sum(x => x.StokAdedi)</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="info-card">
+                <div class="info-card-content">
+                    <i class="fas fa-chart-area info-card-icon"></i>
+                    <div>
+                        <h6>Toplam Alan (m²)</h6>
+                        <h3 id="toplamAlan">@Model.Sum(x => x.ToplamAlan).ToString("N2")</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="info-card">
+                <div class="info-card-content">
+                    <div class="filter-container">
+                        <div class="filter-item">
+                            <label>Çeşit</label>
+                            <select class="form-select filter-select" id="cesitSelect">
+                                <option value="">Tümü</option>
+                                @foreach (var cesit in Model.Select(x => x.Product?.UrunCesit).Distinct())
+                                {
+                                    <option value="@cesit">@cesit</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="filter-item">
+                            <label>Ölçü</label>
+                            <select class="form-select filter-select" id="olcuSelect">
+                                <option value="">Tümü</option>
+                                @foreach (var olcu in Model.Select(x => $"{x.Product?.UrunEn}x{x.Product?.UrunBoy}").Distinct())
+                                {
+                                    <option value="@olcu">@olcu</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="filter-item">
+                            <label>Renk</label>
+                            <select class="form-select filter-select" id="renkSelect">
+                                <option value="">Tümü</option>
+                                @foreach (var renk in Model.Select(x => x.Product?.UrunRenk).Distinct())
+                                {
+                                    <option value="@renk">@renk</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tablo -->
+    <div class="table-responsive">
+        <table class="table table-hover custom-table">
+            <thead>
+                <tr>
+                    <th>Barkod</th>
+                    <th>Ürün Adı</th>
+                    <th>Çeşit</th>
+                    <th>Ölçüler (cm)</th>
+                    <th>Desen Kodu</th>
+                    <th>Renk</th>
+                    <th>Stok Adedi</th>
+                    <th>Toplam Alan (m²)</th>
+                    <!--<th>Ekleme Tarihi</th>-->
+                    <th>İşlemler</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@item.Product?.UrunBarkod</td>
+                        <td>@item.Product?.UrunAd</td>
+                        <td>@item.Product?.UrunCesit</td>
+                        <td>@item.Product?.UrunEn x @item.Product?.UrunBoy</td>
+                        <td>@item.Product?.UrunDesenKod</td>
+                        <td>@item.Product?.UrunRenk</td>
+                        <td>@item.StokAdedi</td>
+                        <td>@item.ToplamAlan.ToString("N2")</td>
+                       <!-- <td>EklemeTarihi</td>--> 
+                        <td>
+                            <button class="btn action-btn btn-edit" data-id="@item.StokId">
+                                <i class="fas fa-edit me-1"></i>Düzenle
+                            </button>
+                            <button class="btn action-btn btn-delete" data-id="@item.StokId">
+                                <i class="fas fa-trash me-1"></i>Sil
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Stok Ekleme Modal -->
+<div class="modal fade" id="addStokModal">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Stok Girişi</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addStokForm">
+                <div class="modal-body">
+                    <input type="hidden" id="stokGirisId" name="id">
+                    <div class="mb-3">
+                        <label class="form-label">Ürün Seçimi</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="barkodInput" 
+                                   placeholder="Barkod okutun veya ürün seçin...">
+                            <button class="btn btn-outline-secondary" type="button" id="barkodScanBtn">
+                                <i class="fas fa-barcode"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <select class="form-select" id="UrunId" required>
+                            <option value="">Ürün seçin...</option>
+                        </select>
+                    </div>
+                    <div id="urunBilgileri" class="mb-3 d-none">
+                        <label class="form-label">Ürün Bilgileri</label>
+                        <div class="product-info p-3 bg-light rounded">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Barkod:</strong> <span id="barkod"></span></p>
+                                    <p class="mb-1"><strong>Ürün Adı:</strong> <span id="urunAd"></span></p>
+                                    <p class="mb-1"><strong>Çeşit:</strong> <span id="cesit"></span></p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Ölçüler:</strong> <span id="olcu"></span></p>
+                                    <p class="mb-1"><strong>Desen Kodu:</strong> <span id="desenKod"></span></p>
+                                    <p class="mb-1"><strong>Renk:</strong> <span id="renk"></span></p>
+                                </div>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-12">
+                                    <p class="mb-0"><strong>Mevcut Stok:</strong> <span id="mevcutStok" class="text-primary"></span></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="StokAdedi" class="form-label">Giriş Miktarı</label>
+                        <div class="input-group">
+                            <button class="btn btn-outline-secondary" type="button" id="decreaseBtn">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                            <input type="number" class="form-control text-center" id="StokAdedi" 
+                                   name="StokAdedi" required min="1" value="1">
+                            <button class="btn btn-outline-secondary" type="button" id="increaseBtn">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-primary">Onayla</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Stok Düşme Modal -->
+<div class="modal fade" id="stokDusModal">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Stok Çıkışı</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="stokDusForm">
+                <div class="modal-body">
+                    <input type="hidden" id="stokDusId" name="id">
+                    <div class="mb-3">
+                        <label class="form-label">Ürün Seçimi</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="stokDusBarkodInput" 
+                                   placeholder="Barkod okutun veya ürün seçin...">
+                            <button class="btn btn-outline-secondary" type="button" id="stokDusBarkodScanBtn">
+                                <i class="fas fa-barcode"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <select class="form-select" id="stokDusUrunId" required>
+                            <option value="">Ürün seçin...</option>
+                        </select>
+                    </div>
+                    <div id="stokDusUrunBilgileri" class="mb-3 d-none">
+                        <label class="form-label">Ürün Bilgileri</label>
+                        <div class="product-info p-3 bg-light rounded">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Barkod:</strong> <span id="stokDusBarkod"></span></p>
+                                    <p class="mb-1"><strong>Ürün Adı:</strong> <span id="stokDusUrunAd"></span></p>
+                                    <p class="mb-1"><strong>Çeşit:</strong> <span id="stokDusCesit"></span></p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Ölçüler:</strong> <span id="stokDusOlcu"></span></p>
+                                    <p class="mb-1"><strong>Desen Kodu:</strong> <span id="stokDusDesenKod"></span></p>
+                                    <p class="mb-1"><strong>Renk:</strong> <span id="stokDusRenk"></span></p>
+                                </div>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-12">
+                                    <p class="mb-0"><strong>Mevcut Stok:</strong> <span id="stokDusMevcutStok" class="text-primary"></span></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="stokDusMiktar" class="form-label">Çıkış Miktarı</label>
+                        <div class="input-group">
+                            <button class="btn btn-outline-secondary" type="button" id="stokDusAzalt">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                            <input type="number" class="form-control text-center" id="stokDusMiktar" 
+                                   name="miktar" required min="1" value="1">
+                            <button class="btn btn-outline-secondary" type="button" id="stokDusArttir">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                        <small class="text-muted">Mevcut stoktan fazla miktar giremezsiniz.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-primary">Onayla</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .custom-table {
+        background: white;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    }
+
+    .custom-table thead {
+        background-color: #f8f9fa;
+    }
+
+    .custom-table th {
+        padding: 15px;
+        font-weight: 500;
+        color: #2c3e50;
+        border-bottom: 2px solid #dee2e6;
+    }
+
+    .custom-table td {
+        padding: 15px;
+        vertical-align: middle;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .custom-table tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+
+    .custom-btn {
+        background: white;
+        color: #2c3e50;
+        border: none;
+        padding: 8px 20px;
+        border-radius: 25px;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .custom-btn:hover {
+        background: #2c3e50;
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    .search-container {
+        position: relative;
+        max-width: 600px;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 12px 20px 12px 45px;
+        border: none;
+        border-radius: 25px;
+        background: white;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .search-input:focus {
+        box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+        outline: none;
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+        pointer-events: none;
+    }
+
+    .search-info {
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+
+    .search-info i {
+        margin-right: 5px;
+    }
+
+    .action-btn {
+        padding: 6px 15px;
+        border-radius: 25px;
+        font-size: 0.9em;
+        transition: all 0.3s ease;
+        background-color: #000000;
+        color: white;
+        margin: 0 3px;
+    }
+
+    .btn-edit {
+        border: 2px solid #007bff;
+    }
+
+    .btn-edit:hover {
+        background-color: #007bff;
+        color: white;
+    }
+
+    .btn-delete {
+        border: 2px solid #dc3545;
+    }
+
+    .btn-delete:hover {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .modal-content {
+        border-radius: 15px;
+    }
+
+    .modal-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .form-control, .form-select {
+        border-radius: 8px;
+        padding: 8px 12px;
+    }
+
+    .info-card {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        height: 100%;
+        transition: all 0.3s ease;
+    }
+
+    .info-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+
+    .info-card-content {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .info-card-icon {
+        font-size: 2.5rem;
+        color: #2c3e50;
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 12px;
+    }
+
+    .info-card h6 {
+        color: #6c757d;
+        margin-bottom: 5px;
+        font-size: 0.9rem;
+    }
+
+    .info-card h3 {
+        color: #2c3e50;
+        margin: 0;
+        font-weight: 600;
+    }
+
+    @@media (max-width: 768px) {
+        .info-card {
+            margin-bottom: 15px;
+        }
+    }
+
+    #barkodSelect {
+        margin-top: 5px;
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+        padding: 8px;
+        width: 100%;
+        color: #2c3e50;
+        background-color: #f8f9fa;
+        transition: all 0.3s ease;
+    }
+
+    #barkodSelect:focus {
+        border-color: #2c3e50;
+        box-shadow: 0 0 0 0.2rem rgba(44, 62, 80, 0.25);
+    }
+
+    #barkodSelect option {
+        padding: 8px;
+    }
+
+    .filter-container {
+        display: flex;
+        gap: 15px;
+        width: 100%;
+    }
+
+    .filter-item {
+        flex: 1;
+    }
+
+    .filter-item label {
+        display: block;
+        margin-bottom: 5px;
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+
+    .filter-select {
+        width: 100%;
+        padding: 8px;
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+        background-color: #f8f9fa;
+        color: #2c3e50;
+        transition: all 0.3s ease;
+    }
+
+    .filter-select:focus {
+        border-color: #2c3e50;
+        box-shadow: 0 0 0 0.2rem rgba(44, 62, 80, 0.25);
+    }
+
+    @@media (max-width: 768px) {
+        .filter-container {
+            flex-direction: column;
+        }
+    }
+
+    #barkodInput {
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+    }
+
+    #barkodScanBtn {
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+        background-color: white;
+        color: #2c3e50;
+        border: 1px solid #ced4da;
+        border-left: none;
+    }
+
+    #barkodScanBtn:hover {
+        background-color: #f8f9fa;
+        color: #000;
+    }
+
+    .input-group {
+        margin-bottom: 10px;
+    }
+
+    #StokAdedi {
+        text-align: center;
+        border-radius: 0;
+        -moz-appearance: textfield;
+    }
+
+    #StokAdedi::-webkit-outer-spin-button,
+    #StokAdedi::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    .input-group .btn {
+        z-index: 0;
+    }
+
+    #decreaseBtn, #increaseBtn {
+        width: 40px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: white;
+        color: #2c3e50;
+        border: 1px solid #ced4da;
+    }
+
+    #decreaseBtn:hover, #increaseBtn:hover {
+        background-color: #f8f9fa;
+        color: #000;
+    }
+
+    #decreaseBtn {
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+    }
+
+    #increaseBtn {
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+    }
+</style>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        $(document).ready(function() {
+            // Ürün listesini yükle
+            function loadProducts() {
+                $.get('/DepoStok/GetProducts', function(data) {
+                    const select = $('#UrunId');
+                    const stokDusSelect = $('#stokDusUrunId');
+                    
+                    // Her iki select'i de temizle
+                    select.empty();
+                    stokDusSelect.empty();
+                    
+                    // Varsayılan seçenekleri ekle
+                    select.append('<option value="">Ürün seçin...</option>');
+                    stokDusSelect.append('<option value="">Ürün seçin...</option>');
+                    
+                    // Ürünleri ekle
+                    data.forEach(function(product) {
+                        const option = `<option value="${product.urunId}">${product.urunBarkod} - ${product.urunAd} (${product.urunCesit})</option>`;
+                        select.append(option);
+                        stokDusSelect.append(option);
+                    });
+                });
+            }
+
+            loadProducts();
+
+            // Ürün seçimi değiştiğinde
+            $('#UrunId').change(function() {
+                const selectedOption = $(this).find('option:selected');
+                if (selectedOption.val()) {
+                    const urunText = selectedOption.text();
+                    const urunBilgileri = urunText.split(' - ');
+                    
+                    // Ürün bilgilerini göster
+                    $('#urunBilgileri').removeClass('d-none');
+                    
+                    // Ürün bilgilerini doldur
+                    const barkod = urunBilgileri[0];
+                    const urunAd = urunBilgileri[1].split(' (')[0];
+                    const cesit = urunBilgileri[1].split(' (')[1].replace(')', '');
+                    
+                    // Mevcut stok bilgisini bul
+                    const row = $('.custom-table tbody tr').filter(function() {
+                        return $(this).find('td:eq(0)').text().trim() === barkod.trim();
+                    });
+                    
+                    if (row.length > 0) {
+                        const mevcutStok = parseInt(row.find('td:eq(6)').text());
+                        const olcu = row.find('td:eq(3)').text();
+                        const desenKod = row.find('td:eq(4)').text();
+                        const renk = row.find('td:eq(5)').text();
+                        
+                        $('#stokGirisId').val(row.find('.btn-edit').data('id'));
+                        $('#barkod').text(barkod);
+                        $('#urunAd').text(urunAd);
+                        $('#cesit').text(cesit);
+                        $('#olcu').text(olcu);
+                        $('#desenKod').text(desenKod);
+                        $('#renk').text(renk);
+                        $('#mevcutStok').text(mevcutStok);
+                    } else {
+                        $('#barkod').text(barkod);
+                        $('#urunAd').text(urunAd);
+                        $('#cesit').text(cesit);
+                        $('#mevcutStok').text('0');
+                    }
+                } else {
+                    $('#urunBilgileri').addClass('d-none');
+                }
+            });
+
+            // Modal açıldığında
+            $('#addStokModal').on('shown.bs.modal', function() {
+                $('#barkodInput').val('').focus();
+                $('#UrunId').val('');
+                $('#urunBilgileri').addClass('d-none');
+                $('#StokAdedi').val(1);
+            });
+
+            $('#decreaseBtn').click(function() {
+                const input = $('#StokAdedi');
+                const currentValue = parseInt(input.val());
+                if (currentValue > 1) {
+                    input.val(currentValue - 1);
+                }
+            });
+
+            $('#increaseBtn').click(function() {
+                const input = $('#StokAdedi');
+                const currentValue = parseInt(input.val());
+                input.val(currentValue + 1);
+            });
+
+            // Form gönderimi kontrolü
+            $('#addStokForm').submit(function(e) {
+                e.preventDefault();
+                const stokAdedi = $('#StokAdedi').val();
+                const urunId = $('#UrunId').val();
+
+                // Değerleri kontrol et
+                if (!urunId || !stokAdedi || stokAdedi < 1) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Hata',
+                        text: 'Lütfen ürün seçin ve geçerli bir stok adedi girin!'
+                    });
+                    return;
+                }
+
+                // Form verilerini gönder
+                const formData = {
+                    UrunId: parseInt(urunId),
+                    StokAdedi: parseInt(stokAdedi)
+                };
+
+                $.ajax({
+                    url: '/DepoStok/Create',
+                    type: 'POST',
+                    data: formData,
+                    success: function(response) {
+                        if (response.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Başarılı',
+                                text: 'Stok başarıyla eklendi!',
+                                timer: 1500,
+                                showConfirmButton: false
+                            }).then(() => {
+                                $('#addStokModal').modal('hide');
+                                location.reload();
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Hata',
+                                text: response.message || 'Stok girişi yapılırken bir hata oluştu!'
+                            });
+                        }
+                    },
+                    error: function() {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Hata',
+                            text: 'Stok girişi yapılırken bir hata oluştu!'
+                        });
+                    }
+                });
+            });
+
+            // Barkod okuyucu için değişkenler
+            let barkodData = '';
+            let lastKeyTime = Date.now();
+            let isProcessingBarcode = false;
+
+            // Barkod okuma fonksiyonu
+            $(document).on('keypress', function(e) {
+                // Modal açık değilse işlem yapma
+                if (!$('#addStokModal').hasClass('show')) return;
+
+                // StokAdedi alanında işlem yapılıyorsa barkod işleme yapma
+                if ($(document.activeElement).attr('id') === 'StokAdedi') {
+                    return;
+                }
+
+                const currentTime = Date.now();
+                if (currentTime - lastKeyTime > 100) {
+                    barkodData = '';
+                }
+                lastKeyTime = currentTime;
+
+                // Enter tuşu kontrolü
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (barkodData && !isProcessingBarcode) {
+                        isProcessingBarcode = true;
+                        handleBarkod(barkodData);
+                        barkodData = '';
+                        setTimeout(() => {
+                            isProcessingBarcode = false;
+                        }, 100);
+                    }
+                } else {
+                    barkodData += e.key;
+                }
+            });
+
+            // Barkod işleme fonksiyonu
+            function handleBarkod(barkod) {
+                $('#barkodInput').val(barkod);
+                
+                // Önce mevcut ürünleri kontrol et
+                let found = false;
+                $('#UrunId option').each(function() {
+                    const optionText = $(this).text();
+                    if (optionText.startsWith(barkod + ' - ')) {
+                        $('#UrunId').val($(this).val()).trigger('change');
+                        found = true;
+                        return false;
+                    }
+                });
+
+                if (!found) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Hata',
+                        text: 'Ürün bulunamadı: ' + barkod
+                    });
+                }
+            }
+
+            // Anlık arama fonksiyonu
+            function performSearch() {
+                const searchText = $('#searchInput').val().toLowerCase();
+                
+                $('.custom-table tbody tr').each(function() {
+                    const row = $(this);
+                    const text = row.text().toLowerCase();
+                    
+                    if (text.includes(searchText)) {
+                        row.show();
+                    } else {
+                        row.hide();
+                    }
+                });
+
+                // Görünür satırların sayısını güncelle
+                const visibleRows = $('.custom-table tbody tr:visible').length;
+                updateSearchInfo(visibleRows);
+            }
+
+            // Arama bilgisini güncelle
+            function updateSearchInfo(count) {
+                const totalRows = $('.custom-table tbody tr').length;
+                
+                if ($('#searchInput').val()) {
+                    if (count === 0) {
+                        $('.search-info').remove();
+                        $('.search-container').append(
+                            `<div class="search-info text-white mt-2">
+                                <i class="fas fa-info-circle"></i> Sonuç bulunamadı
+                            </div>`
+                        );
+                    } else {
+                        $('.search-info').remove();
+                        $('.search-container').append(
+                            `<div class="search-info text-white mt-2">
+                                <i class="fas fa-info-circle"></i> ${totalRows} kayıt içinde ${count} sonuç bulundu
+                            </div>`
+                        );
+                    }
+                } else {
+                    $('.search-info').remove();
+                }
+            }
+
+            // Input değişikliğini dinle
+            let searchTimeout;
+            $('#searchInput').on('input', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(performSearch, 300); // 300ms gecikme ile ara
+            });
+
+            // Enter tuşu ile arama
+            $('#searchInput').on('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    performSearch();
+                }
+            });
+
+            $('.btn-edit').click(function() {
+                const id = $(this).data('id');
+                const currentRow = $(this).closest('tr');
+                const currentStok = currentRow.find('td:eq(6)').text();
+                
+                const newStok = prompt('Yeni stok adedini girin:', currentStok);
+                if (newStok != null && newStok.trim() !== '') {
+                    $.post(`/DepoStok/Edit/${id}`, { id: id, stokAdedi: newStok }, function() {
+                        location.reload();
+                    });
+                }
+            });
+
+            $('.btn-delete').click(function() {
+                if (confirm('Bu stok kaydını silmek istediğinizden emin misiniz?')) {
+                    const id = $(this).data('id');
+                    $.post(`/DepoStok/Delete/${id}`, function() {
+                        location.reload();
+                    });
+                }
+            });
+
+            // Filtreleme fonksiyonu
+            function filterTable() {
+                const selectedCesit = $('#cesitSelect').val();
+                const selectedOlcu = $('#olcuSelect').val();
+                const selectedRenk = $('#renkSelect').val();
+                
+                let toplamStok = 0;
+                let toplamAlan = 0;
+
+                console.log('Seçilen Çeşit:', selectedCesit);
+                console.log('Seçilen Ölçü:', selectedOlcu);
+                console.log('Seçilen Renk:', selectedRenk);
+
+                $('.custom-table tbody tr').each(function() {
+                    const row = $(this);
+                    const cesit = row.find('td:eq(2)').text().trim();
+                    const olcu = row.find('td:eq(3)').text().trim();
+                    const renk = row.find('td:eq(5)').text().trim();
+
+                    console.log('Satır Çeşit:', cesit);
+                    console.log('Satır Ölçü:', olcu);
+                    console.log('Satır Renk:', renk);
+
+                    const cesitMatch = selectedCesit === '' || cesit === selectedCesit;
+                    const olcuMatch = selectedOlcu === '' || olcu.replace(/\s+/g, '') === selectedOlcu.replace(/\s+/g, '');
+                    const renkMatch = selectedRenk === '' || renk === selectedRenk;
+
+                    if (cesitMatch && olcuMatch && renkMatch) {
+                        row.show();
+                        const stokAdedi = parseInt(row.find('td:eq(6)').text()) || 0;
+                        const alan = parseFloat(row.find('td:eq(7)').text().replace(',', '.')) || 0;
+                        
+                        toplamStok += stokAdedi;
+                        toplamAlan += alan;
+
+                        console.log('Eşleşme Bulundu:', {
+                            cesit: cesitMatch,
+                            olcu: olcuMatch,
+                            renk: renkMatch,
+                            stokAdedi: stokAdedi,
+                            alan: alan
+                        });
+                    } else {
+                        row.hide();
+                    }
+                });
+
+                // Toplamları güncelle
+                $('#toplamStok').text(toplamStok);
+                $('#toplamAlan').text(toplamAlan.toFixed(2));
+            }
+
+            // Filtre değişikliklerini dinle
+            $('.filter-select').change(filterTable);
+
+            // Select elementlerini doldur
+            function populateFilters() {
+                const cesitler = new Set();
+                const olculer = new Set();
+                const renkler = new Set();
+
+                $('.custom-table tbody tr').each(function() {
+                    const row = $(this);
+                    cesitler.add(row.find('td:eq(2)').text().trim());
+                    olculer.add(row.find('td:eq(3)').text().trim());
+                    renkler.add(row.find('td:eq(5)').text().trim());
+                });
+
+                // Çeşitleri doldur
+                const cesitSelect = $('#cesitSelect');
+                cesitSelect.empty().append('<option value="">Tümü</option>');
+                [...cesitler].sort().forEach(cesit => {
+                    cesitSelect.append(`<option value="${cesit}">${cesit}</option>`);
+                });
+
+                // Ölçüleri doldur
+                const olcuSelect = $('#olcuSelect');
+                olcuSelect.empty().append('<option value="">Tümü</option>');
+                [...olculer].sort().forEach(olcu => {
+                    olcuSelect.append(`<option value="${olcu}">${olcu}</option>`);
+                });
+
+                // Renkleri doldur
+                const renkSelect = $('#renkSelect');
+                renkSelect.empty().append('<option value="">Tümü</option>');
+                [...renkler].sort().forEach(renk => {
+                    renkSelect.append(`<option value="${renk}">${renk}</option>`);
+                });
+            }
+
+            // Sayfa yüklendiğinde filtreleri doldur
+            populateFilters();
+
+            // Rapor Al butonu için click eventi
+            $('#raporAlBtn').click(function() {
+                // Rapor verilerini al
+                $.get('/DepoStok/GetRapor', function(response) {
+                    if (response.success) {
+                        // Rapor verilerini tabloya ekle
+                        let raporHTML = `
+                            <div class="table-responsive mt-4">
+                                <h4 class="text-white mb-3">Stok Durumu Raporu</h4>
+                                <table class="table table-hover custom-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Ürün</th>
+                                            <th>Miktar</th>
+                                            <th>Kullanıcı</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                        `;
+
+                        response.data.forEach(item => {
+                            raporHTML += `
+                                <tr>
+                                    <td>${item.urunAd}</td>
+                                    <td>${item.miktar}</td>
+                                    <td>${item.kullanici}</td>
+                                </tr>
+                            `;
+                        });
+
+                        raporHTML += `
+                                    </tbody>
+                                </table>
+                            </div>
+                        `;
+
+                        // Raporu göster
+                        Swal.fire({
+                            title: 'Stok Durumu Raporu',
+                            html: raporHTML,
+                            width: '800px',
+                            showCloseButton: true,
+                            showConfirmButton: true,
+                            confirmButtonText: 'Yazdır',
+                            showDenyButton: true,
+                            denyButtonText: 'Kapat'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                window.print();
+                            }
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Hata',
+                            text: 'Rapor alınırken bir hata oluştu!'
+                        });
+                    }
+                });
+            });
+
+            // Stok düşme işlemleri
+            let stokDusBarkodData = '';
+            let stokDusLastKeyTime = Date.now();
+            let stokDusIsProcessingBarcode = false;
+
+            // Barkod okuma fonksiyonu
+            $(document).on('keypress', function(e) {
+                // Stok düşme modalı açık değilse işlem yapma
+                if (!$('#stokDusModal').hasClass('show')) return;
+
+                // StokDusMiktar alanında işlem yapılıyorsa barkod işleme yapma
+                if ($(document.activeElement).attr('id') === 'stokDusMiktar') {
+                    return;
+                }
+
+                const currentTime = Date.now();
+                if (currentTime - stokDusLastKeyTime > 100) {
+                    stokDusBarkodData = '';
+                }
+                stokDusLastKeyTime = currentTime;
+
+                // Enter tuşu kontrolü
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (stokDusBarkodData && !stokDusIsProcessingBarcode) {
+                        stokDusIsProcessingBarcode = true;
+                        handleStokDusBarkod(stokDusBarkodData);
+                        stokDusBarkodData = '';
+                        setTimeout(() => {
+                            stokDusIsProcessingBarcode = false;
+                        }, 100);
+                    }
+                } else {
+                    stokDusBarkodData += e.key;
+                }
+            });
+
+            // Barkod işleme fonksiyonu
+            function handleStokDusBarkod(barkod) {
+                $('#stokDusBarkodInput').val(barkod);
+                
+                // Önce mevcut ürünleri kontrol et
+                let found = false;
+                $('#stokDusUrunId option').each(function() {
+                    const optionText = $(this).text();
+                    if (optionText.startsWith(barkod + ' - ')) {
+                        $('#stokDusUrunId').val($(this).val()).trigger('change');
+                        found = true;
+                        return false;
+                    }
+                });
+
+                if (!found) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Hata',
+                        text: 'Ürün bulunamadı: ' + barkod
+                    });
+                }
+            }
+
+            // Ürün seçimi değiştiğinde
+            $('#stokDusUrunId').change(function() {
+                const selectedOption = $(this).find('option:selected');
+                if (selectedOption.val()) {
+                    const urunText = selectedOption.text();
+                    const urunBilgileri = urunText.split(' - ');
+                    
+                    // Ürün bilgilerini göster
+                    $('#stokDusUrunBilgileri').removeClass('d-none');
+                    
+                    // Ürün bilgilerini doldur
+                    const barkod = urunBilgileri[0];
+                    const urunAd = urunBilgileri[1].split(' (')[0];
+                    const cesit = urunBilgileri[1].split(' (')[1].replace(')', '');
+                    
+                    // Mevcut stok bilgisini bul
+                    const row = $('.custom-table tbody tr').filter(function() {
+                        return $(this).find('td:eq(0)').text().trim() === barkod.trim();
+                    });
+                    
+                    if (row.length > 0) {
+                        const mevcutStok = parseInt(row.find('td:eq(6)').text());
+                        const olcu = row.find('td:eq(3)').text();
+                        const desenKod = row.find('td:eq(4)').text();
+                        const renk = row.find('td:eq(5)').text();
+                        
+                        // Stok ID'sini bul
+                        const stokId = row.find('.btn-edit').data('id');
+                        $('#stokDusId').val(stokId);
+                        
+                        $('#stokDusBarkod').text(barkod);
+                        $('#stokDusUrunAd').text(urunAd);
+                        $('#stokDusCesit').text(cesit);
+                        $('#stokDusOlcu').text(olcu);
+                        $('#stokDusDesenKod').text(desenKod);
+                        $('#stokDusRenk').text(renk);
+                        $('#stokDusMevcutStok').text(mevcutStok);
+                        $('#stokDusMiktar').val(1).attr('max', mevcutStok);
+                    } else {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Uyarı',
+                            text: 'Bu ürün için stok kaydı bulunamadı!'
+                        });
+                        $('#stokDusUrunBilgileri').addClass('d-none');
+                    }
+                } else {
+                    $('#stokDusUrunBilgileri').addClass('d-none');
+                }
+            });
+
+            // Modal açıldığında
+            $('#stokDusModal').on('shown.bs.modal', function() {
+                $('#stokDusBarkodInput').val('').focus();
+                $('#stokDusUrunId').val('');
+                $('#stokDusUrunBilgileri').addClass('d-none');
+                $('#stokDusMiktar').val(1);
+            });
+
+            $('#stokDusAzalt').click(function() {
+                const input = $('#stokDusMiktar');
+                const currentValue = parseInt(input.val());
+                if (currentValue > 1) {
+                    input.val(currentValue - 1);
+                }
+            });
+
+            $('#stokDusArttir').click(function() {
+                const input = $('#stokDusMiktar');
+                const currentValue = parseInt(input.val());
+                const maxValue = parseInt(input.attr('max'));
+                if (currentValue < maxValue) {
+                    input.val(currentValue + 1);
+                }
+            });
+
+            $('#stokDusMiktar').on('input', function() {
+                const input = $(this);
+                const value = parseInt(input.val());
+                const maxValue = parseInt(input.attr('max'));
+                
+                if (value > maxValue) {
+                    input.val(maxValue);
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Uyarı',
+                        text: 'Girdiğiniz miktar mevcut stoktan fazla olamaz!',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                }
+            });
+
+            $('#stokDusForm').submit(function(e) {
+                e.preventDefault();
+                const id = $('#stokDusId').val();
+                const miktar = $('#stokDusMiktar').val();
+                const mevcutStok = parseInt($('#stokDusMevcutStok').text());
+
+                if (miktar > mevcutStok) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Hata',
+                        text: 'Düşülecek miktar mevcut stoktan fazla olamaz!'
+                    });
+                    return;
+                }
+
+                $.post('/DepoStok/StokDus', { id: id, miktar: miktar }, function(response) {
+                    if (response.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Başarılı',
+                            text: response.message,
+                            timer: 1500,
+                            showConfirmButton: false
+                        }).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Hata',
+                            text: response.message
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+} 
